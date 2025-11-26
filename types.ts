@@ -1,5 +1,5 @@
 
-export type Category = 'General' | 'Needs' | 'Feelings' | 'People' | 'Places' | 'Actions' | 'Connectors' | 'Greetings' | 'Responses' | 'Keyboard' | 'Saved' | 'Settings';
+export type Category = 'General' | 'Needs' | 'Feelings' | 'People' | 'Places' | 'Actions' | 'Connectors' | 'Phrases' | 'Greetings' | 'Responses' | 'Keyboard' | 'Saved' | 'Settings';
 
 export interface TileData {
   id: string;
@@ -16,12 +16,9 @@ export interface Vocabulary {
   [key: string]: TileData[];
 }
 
-export enum AppMode {
-  BOARD = 'BOARD',
-  LIVE = 'LIVE',
-}
-
 export interface UserSettings {
   tileSize: number; // Height in pixels
   textSize: number; // Font size in pixels
+  voiceName: string; // Gemini TTS Voice Name
+  sidebarPosition: 'left' | 'right'; // Screen side for navigation
 }

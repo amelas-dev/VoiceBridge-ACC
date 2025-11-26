@@ -1,8 +1,5 @@
 {
   "name": "VoiceBridge AAC",
-  "description": "A modern, accessible communication board for mute individuals featuring Gemini-powered Text-to-Speech and a Live conversational assistant.",
-  "requestFramePermissions": [
-    "camera",
-    "microphone"
-  ]
+  "description": "A modern, accessible communication board for mute individuals featuring Gemini-powered Text-to-Speech.",
+  "requestFramePermissions": []
 }

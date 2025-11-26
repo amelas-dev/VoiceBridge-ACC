@@ -1,16 +1,25 @@
 
 import React from 'react';
 import { TileData, UserSettings } from '../types';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Pin } from 'lucide-react';
 
 interface TileProps {
   data: TileData;
   onClick: (tile: TileData) => void;
   variant?: 'normal' | 'small';
   settings?: UserSettings;
+  isPinned?: boolean;
+  onTogglePin?: () => void;
 }
 
-const Tile: React.FC<TileProps> = ({ data, onClick, variant = 'normal', settings }) => {
+const Tile: React.FC<TileProps> = ({ 
+  data, 
+  onClick, 
+  variant = 'normal', 
+  settings, 
+  isPinned, 
+  onTogglePin 
+}) => {
   const baseClasses = "flex flex-col items-center justify-center rounded-xl shadow-sm transition-all duration-200 active:scale-95 border-b-4 select-none";
   
   // Dynamic Styles based on Settings (Only applies to 'normal' variant)
@@ -19,7 +28,6 @@ const Tile: React.FC<TileProps> = ({ data, onClick, variant = 'normal', settings
   const textStyle = isCustomSized ? { fontSize: `${settings.textSize}px`, lineHeight: 1.2 } : {};
   
   // Emoji/Image scales with Tile Size (container), Text scales with Text Size setting.
-  // We use a flexible gap to keep them separated nicely without one pushing the other too much.
   const emojiStyle = isCustomSized ? { fontSize: `${settings.tileSize * 0.4}px`, lineHeight: 1 } : {}; 
   const imageContainerStyle = isCustomSized ? { width: `${settings.tileSize * 0.55}px`, height: `${settings.tileSize * 0.55}px` } : {};
   const navIconSize = isCustomSized ? Math.max(24, settings.tileSize * 0.3) : 32;
@@ -54,10 +62,10 @@ const Tile: React.FC<TileProps> = ({ data, onClick, variant = 'normal', settings
     ? (isCustomSized ? "w-full font-bold" : "h-32 md:h-40 w-full text-lg md:text-xl font-bold")
     : "h-20 w-20 text-sm font-semibold mx-1 shrink-0"; // Small for sentence strip
 
-  return (
+  const buttonContent = (
     <button
       onClick={() => onClick(data)}
-      className={`${baseClasses} ${sizeClasses} ${data.color} hover:brightness-95 overflow-hidden`}
+      className={`${baseClasses} ${sizeClasses} ${data.color} hover:brightness-95 overflow-hidden w-full h-full`}
       style={variant === 'normal' ? tileStyle : undefined}
       aria-label={data.label}
     >
@@ -90,6 +98,28 @@ const Tile: React.FC<TileProps> = ({ data, onClick, variant = 'normal', settings
       </div>
     </button>
   );
+
+  // Wrap in a relative div if we need to show the Pin button (only on normal tiles that aren't navigation)
+  if (variant === 'normal' && onTogglePin && !data.isNavigation) {
+    return (
+      <div className="relative w-full h-full group">
+        {buttonContent}
+        <button 
+          onClick={(e) => { e.stopPropagation(); onTogglePin(); }}
+          className={`absolute top-2 right-2 p-1.5 rounded-full transition-all z-20 shadow-sm
+            ${isPinned 
+              ? 'bg-blue-100 text-blue-600 opacity-100' 
+              : 'bg-white/50 text-slate-400 opacity-0 group-hover:opacity-100 hover:bg-white hover:text-slate-600'
+            }`}
+          title={isPinned ? "Unpin tile" : "Pin tile"}
+        >
+          <Pin size={16} className={isPinned ? "fill-current" : ""} />
+        </button>
+      </div>
+    );
+  }
+
+  return buttonContent;
 };
 
 export default Tile;

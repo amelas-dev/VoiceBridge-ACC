@@ -3,12 +3,22 @@ import { Vocabulary, TileData } from './types';
 
 export const CATEGORIES = ['General', 'Needs', 'Feelings', 'People', 'Actions', 'Keyboard', 'Saved'] as const;
 export const STORAGE_KEY = 'voicebridge_saved_phrases';
+export const PINNED_STORAGE_KEY = 'voicebridge_pinned_tiles';
+
+export const VOICE_OPTIONS = [
+  { id: 'Puck', label: 'Puck', description: 'Neutral & Clear' },
+  { id: 'Charon', label: 'Charon', description: 'Deep & Authoritative' },
+  { id: 'Kore', label: 'Kore', description: 'Soft & Soothing' },
+  { id: 'Fenrir', label: 'Fenrir', description: 'Energetic & Strong' },
+  { id: 'Zephyr', label: 'Zephyr', description: 'Calm & Balanced' },
+] as const;
 
 const baseTiles: TileData[] = [
   // --- General Category (Folders Only) ---
   { id: 'folder_connectors', label: 'Words', emoji: '📝', color: 'bg-slate-200 border-slate-400', category: 'General' },
   { id: 'folder_responses', label: 'Responses', emoji: '💬', color: 'bg-blue-100 border-blue-300', category: 'General' },
   { id: 'folder_greetings', label: 'Greetings', emoji: '🤝', color: 'bg-yellow-100 border-yellow-300', category: 'General' },
+  { id: 'folder_phrases', label: 'Phrases', emoji: '🗣️', color: 'bg-teal-100 border-teal-300', category: 'General' },
   
   // --- Responses Category ---
   { id: 'back_general', label: 'Go Back', emoji: '🔙', color: 'bg-slate-200 border-slate-300', category: 'Responses', isNavigation: true },
@@ -213,6 +223,39 @@ const baseTiles: TileData[] = [
   { id: 'cousin', label: 'Cousin', emoji: '🧑‍🤝‍🧑', color: 'bg-purple-100 border-purple-300', category: 'People' },
   { id: 'uncle', label: 'Uncle', emoji: '🧔', color: 'bg-blue-100 border-blue-300', category: 'People' },
   { id: 'aunt', label: 'Aunt', emoji: '👩‍🦱', color: 'bg-pink-100 border-pink-300', category: 'People' },
+
+  // --- Phrases (Target: 30) ---
+  { id: 'back_general', label: 'Go Back', emoji: '🔙', color: 'bg-slate-200 border-slate-300', category: 'Phrases', isNavigation: true },
+  { id: 'phr_1', label: 'I use this device to talk.', emoji: '🗣️', color: 'bg-teal-50 border-teal-200', category: 'Phrases' },
+  { id: 'phr_2', label: 'Please be patient.', emoji: '⏳', color: 'bg-teal-50 border-teal-200', category: 'Phrases' },
+  { id: 'phr_3', label: 'I understand.', emoji: '👍', color: 'bg-teal-50 border-teal-200', category: 'Phrases' },
+  { id: 'phr_4', label: 'I do not understand.', emoji: '🤷', color: 'bg-teal-50 border-teal-200', category: 'Phrases' },
+  { id: 'phr_5', label: 'Please say it again.', emoji: '🔁', color: 'bg-teal-50 border-teal-200', category: 'Phrases' },
+  { id: 'phr_6', label: 'Can you write it down?', emoji: '✍️', color: 'bg-teal-50 border-teal-200', category: 'Phrases' },
+  { id: 'phr_7', label: 'I need a doctor.', emoji: '👨‍⚕️', color: 'bg-teal-50 border-teal-200', category: 'Phrases' },
+  { id: 'phr_8', label: 'Call 911.', emoji: '🚨', color: 'bg-teal-50 border-teal-200', category: 'Phrases' },
+  { id: 'phr_9', label: 'Where is the bathroom?', emoji: '🚻', color: 'bg-teal-50 border-teal-200', category: 'Phrases' },
+  { id: 'phr_10', label: 'I am comfortable.', emoji: '😌', color: 'bg-teal-50 border-teal-200', category: 'Phrases' },
+  { id: 'phr_11', label: 'I am uncomfortable.', emoji: '😣', color: 'bg-teal-50 border-teal-200', category: 'Phrases' },
+  { id: 'phr_12', label: 'Change the channel.', emoji: '📺', color: 'bg-teal-50 border-teal-200', category: 'Phrases' },
+  { id: 'phr_13', label: 'What are we doing?', emoji: '❓', color: 'bg-teal-50 border-teal-200', category: 'Phrases' },
+  { id: 'phr_14', label: 'I want to go outside.', emoji: '🌳', color: 'bg-teal-50 border-teal-200', category: 'Phrases' },
+  { id: 'phr_15', label: 'I want to stay inside.', emoji: '🏠', color: 'bg-teal-50 border-teal-200', category: 'Phrases' },
+  { id: 'phr_16', label: 'Please charge my device.', emoji: '🔋', color: 'bg-teal-50 border-teal-200', category: 'Phrases' },
+  { id: 'phr_17', label: 'How much does this cost?', emoji: '💲', color: 'bg-teal-50 border-teal-200', category: 'Phrases' },
+  { id: 'phr_18', label: 'It is too loud.', emoji: '🔊', color: 'bg-teal-50 border-teal-200', category: 'Phrases' },
+  { id: 'phr_19', label: 'It is too quiet.', emoji: '🔈', color: 'bg-teal-50 border-teal-200', category: 'Phrases' },
+  { id: 'phr_20', label: 'I am bored.', emoji: '😐', color: 'bg-teal-50 border-teal-200', category: 'Phrases' },
+  { id: 'phr_21', label: 'Can I have some water?', emoji: '💧', color: 'bg-teal-50 border-teal-200', category: 'Phrases' },
+  { id: 'phr_22', label: 'I am finished.', emoji: '🏁', color: 'bg-teal-50 border-teal-200', category: 'Phrases' },
+  { id: 'phr_23', label: 'Not yet.', emoji: '⏳', color: 'bg-teal-50 border-teal-200', category: 'Phrases' },
+  { id: 'phr_24', label: 'Good job.', emoji: '👏', color: 'bg-teal-50 border-teal-200', category: 'Phrases' },
+  { id: 'phr_25', label: 'Happy Birthday.', emoji: '🎂', color: 'bg-teal-50 border-teal-200', category: 'Phrases' },
+  { id: 'phr_26', label: 'Happy Holidays.', emoji: '🎄', color: 'bg-teal-50 border-teal-200', category: 'Phrases' },
+  { id: 'phr_27', label: 'Congratulations.', emoji: '🎉', color: 'bg-teal-50 border-teal-200', category: 'Phrases' },
+  { id: 'phr_28', label: 'I missed you.', emoji: '🫂', color: 'bg-teal-50 border-teal-200', category: 'Phrases' },
+  { id: 'phr_29', label: 'See you later.', emoji: '👋', color: 'bg-teal-50 border-teal-200', category: 'Phrases' },
+  { id: 'phr_30', label: 'I love you.', emoji: '❤️', color: 'bg-teal-50 border-teal-200', category: 'Phrases' },
 ];
 
 export const VOCABULARY: Vocabulary = baseTiles.reduce((acc, tile) => {

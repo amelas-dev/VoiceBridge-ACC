@@ -1,27 +1,29 @@
+
 import React, { useState, useEffect } from 'react';
-import { TileData, AppMode, UserSettings } from './types';
-import { CATEGORIES, VOCABULARY, STORAGE_KEY } from './constants';
+import { TileData, UserSettings } from './types';
+import { CATEGORIES, VOCABULARY, STORAGE_KEY, PINNED_STORAGE_KEY } from './constants';
 import Tile from './components/Tile';
 import SentenceStrip from './components/SentenceStrip';
-import LiveSession from './components/LiveSession';
 import KeyboardView from './components/KeyboardView';
 import SavedPhrasesView from './components/SavedPhrasesView';
 import SettingsView from './components/SettingsView';
 import SaveModal from './components/SaveModal';
 import Toast, { ToastMessage } from './components/Toast';
-import { Keyboard, Bookmark, Settings } from 'lucide-react';
+import { Keyboard, Bookmark, Settings, Pin } from 'lucide-react';
 
 const App: React.FC = () => {
-  const [mode, setMode] = useState<AppMode>(AppMode.BOARD);
   const [sentence, setSentence] = useState<TileData[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>(CATEGORIES[0]);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [savedTiles, setSavedTiles] = useState<TileData[]>([]);
+  const [pinnedTiles, setPinnedTiles] = useState<TileData[]>([]);
   
-  // Settings State (Default: Tile Height 160px ~ h-40, Text Size 20px ~ text-xl)
+  // Settings State (Default: Tile Height 160px ~ h-40, Text Size 20px ~ text-xl, Voice: Fenrir, Sidebar: Left)
   const [userSettings, setUserSettings] = useState<UserSettings>({
     tileSize: 160,
-    textSize: 20
+    textSize: 20,
+    voiceName: 'Fenrir',
+    sidebarPosition: 'left'
   });
   
   // UI State for Modals/Toasts
@@ -29,15 +31,25 @@ const App: React.FC = () => {
   const [toast, setToast] = useState<ToastMessage | null>(null);
   const [pendingSaveName, setPendingSaveName] = useState('');
 
-  // Load saved phrases on mount
+  // Load saved phrases and pinned tiles on mount
   useEffect(() => {
-    const loaded = localStorage.getItem(STORAGE_KEY);
-    if (loaded) {
+    // Saved Phrases
+    const loadedSaved = localStorage.getItem(STORAGE_KEY);
+    if (loadedSaved) {
       try {
-        setSavedTiles(JSON.parse(loaded));
+        setSavedTiles(JSON.parse(loadedSaved));
       } catch (e) {
         console.error("Failed to load saved phrases", e);
-        showToast('error', 'Failed to load saved phrases');
+      }
+    }
+
+    // Pinned Tiles
+    const loadedPinned = localStorage.getItem(PINNED_STORAGE_KEY);
+    if (loadedPinned) {
+      try {
+        setPinnedTiles(JSON.parse(loadedPinned));
+      } catch (e) {
+        console.error("Failed to load pinned tiles", e);
       }
     }
   }, []);
@@ -68,6 +80,10 @@ const App: React.FC = () => {
       setSelectedCategory('Greetings');
       return;
     }
+    if (tile.id === 'folder_phrases') {
+      setSelectedCategory('Phrases');
+      return;
+    }
     if (tile.id === 'back_general') {
       setSelectedCategory('General');
       return;
@@ -84,6 +100,23 @@ const App: React.FC = () => {
 
   const handleClear = () => {
     setSentence([]);
+  };
+
+  const handleTogglePin = (tile: TileData) => {
+    const isPinned = pinnedTiles.some(t => t.id === tile.id);
+    let newPinned;
+    
+    if (isPinned) {
+      newPinned = pinnedTiles.filter(t => t.id !== tile.id);
+      showToast('success', 'Tile unpinned');
+    } else {
+      // Create a clean copy to pin (remove navigation flags if any, though regular tiles shouldn't have them)
+      newPinned = [...pinnedTiles, tile];
+      showToast('success', 'Tile pinned to General');
+    }
+    
+    setPinnedTiles(newPinned);
+    localStorage.setItem(PINNED_STORAGE_KEY, JSON.stringify(newPinned));
   };
 
   const openSaveModal = () => {
@@ -138,6 +171,17 @@ const App: React.FC = () => {
     return null;
   };
 
+  // Determine Layout Order based on settings
+  const isSidebarRight = userSettings.sidebarPosition === 'right';
+  const layoutClass = `flex-1 flex overflow-hidden ${isSidebarRight ? 'flex-col-reverse md:flex-row-reverse' : 'flex-col md:flex-row'}`;
+  
+  // Dynamic border classes for sidebar based on position
+  // Default (Left): border-b md:border-r
+  // Flipped (Right): border-t md:border-l
+  const sidebarBorderClass = isSidebarRight 
+    ? 'border-t md:border-t-0 md:border-l' 
+    : 'border-b md:border-b-0 md:border-r';
+
   return (
     <div className="h-screen w-screen flex flex-col bg-slate-50 text-slate-900">
       
@@ -151,29 +195,23 @@ const App: React.FC = () => {
         defaultName={pendingSaveName}
       />
 
-      {/* Live Mode Overlay */}
-      {mode === AppMode.LIVE && (
-        <div className="fixed inset-0 z-50 bg-black animate-in fade-in duration-300">
-           <LiveSession onClose={() => setMode(AppMode.BOARD)} />
-        </div>
-      )}
-
       {/* Main Board UI */}
       <SentenceStrip 
         sentence={sentence} 
         onRemove={handleRemoveTile} 
         onClear={handleClear}
         onSave={openSaveModal}
-        onLiveToggle={() => setMode(AppMode.LIVE)}
+        onAddTile={handleTileClick}
         isSpeaking={isSpeaking}
         setIsSpeaking={setIsSpeaking}
+        settings={userSettings}
       />
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
+      <div className={layoutClass}>
         
         {/* Sidebar Container */}
-        <div className="w-full md:w-64 bg-slate-100 border-b md:border-b-0 md:border-r border-slate-200 flex md:flex-col shrink-0">
+        <div className={`w-full md:w-64 bg-slate-100 border-slate-200 flex md:flex-col shrink-0 ${sidebarBorderClass}`}>
           
           {/* Scrollable Categories List */}
           <div className="flex-1 p-2 flex md:flex-col gap-2 overflow-x-auto md:overflow-y-auto no-scrollbar">
@@ -208,7 +246,7 @@ const App: React.FC = () => {
             </button>
           </div>
 
-          {/* Desktop Only Settings Button (Fixed at Bottom) */}
+          {/* Desktop Only Settings Button (Fixed at Bottom of Sidebar) */}
           <div className="hidden md:flex flex-col border-t border-slate-200 p-2 bg-slate-100">
             <button
               onClick={() => setSelectedCategory('Settings')}
@@ -243,14 +281,57 @@ const App: React.FC = () => {
                settings={userSettings}
                onSettingsChange={setUserSettings}
              />
+           ) : selectedCategory === 'General' ? (
+             // Special Layout for General Tab to show Pinned items
+             <div className="p-4 pb-20 space-y-8">
+                {/* Standard General Folders */}
+                <div>
+                  <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3 px-1">Categories</h3>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                    {VOCABULARY['General']?.map((tile) => (
+                      <Tile 
+                        key={tile.id} 
+                        data={tile} 
+                        onClick={handleTileClick}
+                        settings={userSettings} 
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                {/* Pinned Tiles Section */}
+                {pinnedTiles.length > 0 && (
+                  <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3 px-1 flex items-center gap-2">
+                      <Pin size={16} className="text-blue-500" /> 
+                      Pinned Tiles
+                    </h3>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                      {pinnedTiles.map((tile) => (
+                        <Tile 
+                          key={`pinned-${tile.id}`} 
+                          data={tile} 
+                          onClick={handleTileClick}
+                          settings={userSettings}
+                          isPinned={true}
+                          onTogglePin={() => handleTogglePin(tile)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+             </div>
            ) : (
+             // Standard Category View
              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 p-4 pb-20">
                {VOCABULARY[selectedCategory]?.map((tile) => (
                  <Tile 
                    key={tile.id} 
                    data={tile} 
                    onClick={handleTileClick}
-                   settings={userSettings} 
+                   settings={userSettings}
+                   isPinned={pinnedTiles.some(p => p.id === tile.id)}
+                   onTogglePin={() => handleTogglePin(tile)}
                  />
                ))}
              </div>
