@@ -16,9 +16,19 @@ export interface Vocabulary {
   [key: string]: TileData[];
 }
 
+export interface AccessibilitySettings {
+  mode: 'standard' | 'dwell'; // Standard click or Dwell (hover)
+  dwellTime: number; // ms to trigger dwell click
+  highContrast: boolean; // Yellow on Black theme
+  speakOnHover: boolean; // Announce label on hover
+  gridGap: number; // Extra spacing between tiles (px)
+  clickHoldTime: number; // ms to hold before click registers (Anti-tremor)
+}
+
 export interface UserSettings {
   tileSize: number; // Height in pixels
   textSize: number; // Font size in pixels
   voiceName: string; // Gemini TTS Voice Name
   sidebarPosition: 'left' | 'right'; // Screen side for navigation
+  accessibility: AccessibilitySettings;
 }

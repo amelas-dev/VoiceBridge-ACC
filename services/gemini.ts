@@ -156,6 +156,31 @@ export const speakText = async (text: string, voiceName: string = 'Fenrir'): Pro
   }
 };
 
+/**
+ * Plays a loud emergency alert tone.
+ */
+export const playEmergencyAlert = () => {
+  const ctx = getAudioContext();
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  
+  osc.type = 'square';
+  osc.frequency.setValueAtTime(880, ctx.currentTime); // High
+  osc.frequency.setValueAtTime(440, ctx.currentTime + 0.2); // Low
+  osc.frequency.setValueAtTime(880, ctx.currentTime + 0.4); // High
+  osc.frequency.setValueAtTime(440, ctx.currentTime + 0.6); // Low
+  
+  gain.gain.setValueAtTime(0.5, ctx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1);
+  
+  osc.start();
+  osc.stop(ctx.currentTime + 1);
+};
+
+
 // --- Bulk Preloading ---
 
 /**

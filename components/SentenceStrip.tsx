@@ -33,6 +33,8 @@ const SentenceStrip: React.FC<SentenceStripProps> = ({
   const [refinedText, setRefinedText] = useState<string | null>(null);
   const [inputValue, setInputValue] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
+  
+  const isHighContrast = settings.accessibility?.highContrast;
 
   // Flatten vocabulary for search, excluding folders and navigation
   const allTiles = useMemo(() => {
@@ -138,39 +140,9 @@ const SentenceStrip: React.FC<SentenceStripProps> = ({
     }
   };
 
-  // Determine Layout alignment based on settings
   const isSidebarRight = settings.sidebarPosition === 'right';
-  // If sidebar is Right, buttons should be on Right (Standard flow)? 
-  // Or should they be on Left to mirror?
-  // User asked for "Opposite side". 
-  // Standard: Sidebar Left, Content Right. Buttons usually Right end.
-  // Flipped: Sidebar Right, Content Left. Buttons should probably stay close to Sidebar (Right) or move Left?
-  // Let's assume accessibility means bringing controls to the active hand.
-  // If I use Right Sidebar, I am Right Handed. I want buttons on Right.
-  // If I use Left Sidebar, I am Left Handed. I want buttons on Left.
-  // Currently buttons are 'justify-end' (Right).
-  // So if Sidebar is Left (default), buttons should be Left? 
-  // Wait, standard UI is usually LTR.
-  // Let's implement dynamic reversal of the strip itself.
-  
-  // Flex Direction for the whole strip:
-  // Default (Left Sidebar): Row. Sentence Left, Buttons Right.
-  // Flipped (Right Sidebar): Row Reverse? Buttons Left, Sentence Right? 
-  // No, if I am Right Handed (Sidebar Right), I want buttons near my thumb (Right).
-  // If I am Left Handed (Sidebar Left), I want buttons near my thumb (Left).
-  
-  // So:
-  // Sidebar Left -> Buttons Left (justify-start ? or flex-row-reverse of strip?)
-  // Sidebar Right -> Buttons Right (justify-end)
-  
-  // Let's use flexDirection to swap the Sentence Area and Action Buttons Area
-  const stripClass = `bg-white border-b border-slate-200 shadow-sm sticky top-0 z-50 flex flex-col h-auto md:h-32 shrink-0 ${isSidebarRight ? 'md:flex-row' : 'md:flex-row-reverse'}`;
-  
-  // Wait, if flex-row-reverse: Buttons (2nd child) come first (Left), Sentence (1st child) comes second (Right).
-  // This matches "Left Handed" setup (Sidebar Left, Buttons Left).
-  
-  // If flex-row: Sentence (1st) Left, Buttons (2nd) Right.
-  // This matches "Right Handed" setup (Sidebar Right, Buttons Right).
+  const stripClass = `border-b shadow-sm sticky top-0 z-50 flex flex-col h-auto md:h-32 shrink-0 ${isSidebarRight ? 'md:flex-row' : 'md:flex-row-reverse'} 
+    ${isHighContrast ? 'bg-black border-yellow-400' : 'bg-white border-slate-200'}`;
   
   return (
     <div className={stripClass}>
@@ -179,12 +151,14 @@ const SentenceStrip: React.FC<SentenceStripProps> = ({
       <div className="flex-1 flex flex-col min-h-[5rem] relative">
         {/* If refined, show the natural sentence prominently */}
         {refinedText && (
-           <div className="bg-indigo-50 px-4 py-2 text-indigo-800 font-medium text-sm flex justify-between items-center border-b border-indigo-100 animate-in slide-in-from-top-2">
+           <div className={`px-4 py-2 font-medium text-sm flex justify-between items-center border-b animate-in slide-in-from-top-2
+             ${isHighContrast ? 'bg-yellow-900 text-yellow-300 border-yellow-600' : 'bg-indigo-50 text-indigo-800 border-indigo-100'}
+           `}>
              <div className="flex items-center gap-2">
                <Wand2 size={16} />
                <span>Corrected: <strong>"{refinedText}"</strong></span>
              </div>
-             <button onClick={() => setRefinedText(null)} className="p-1 hover:bg-indigo-100 rounded">
+             <button onClick={() => setRefinedText(null)} className="p-1 hover:opacity-75 rounded">
                <X size={14} />
              </button>
            </div>
@@ -196,10 +170,14 @@ const SentenceStrip: React.FC<SentenceStripProps> = ({
         >
           {sentence.map((tile, index) => (
             <div key={`${tile.id}-${index}`} className={`relative group shrink-0 animate-in fade-in zoom-in duration-200 ${refinedText ? 'opacity-50 grayscale' : ''}`}>
-              <Tile data={tile} onClick={() => {}} variant="small" />
+              <Tile data={tile} onClick={() => {}} variant="small" settings={settings} />
               <button 
                 onClick={() => onRemove(index)}
-                className="absolute -top-2 -right-2 bg-slate-200 text-slate-600 rounded-full p-1 shadow-sm hover:bg-red-100 hover:text-red-500 transition-colors z-10"
+                className={`absolute -top-2 -right-2 rounded-full p-1 shadow-sm transition-colors z-10
+                  ${isHighContrast 
+                    ? 'bg-red-600 text-white border border-white hover:bg-red-700' 
+                    : 'bg-slate-200 text-slate-600 hover:bg-red-100 hover:text-red-500'}
+                `}
                 aria-label="Remove tile"
               >
                 <X size={12} />
@@ -223,31 +201,43 @@ const SentenceStrip: React.FC<SentenceStripProps> = ({
                 onFocus={() => setShowSuggestions(true)}
                 onBlur={() => setTimeout(() => setShowSuggestions(false), 200)} // Delay so click registers
                 onKeyDown={handleKeyDown}
-                placeholder={sentence.length === 0 ? "Tap icons or type here..." : "Type to add..."}
-                className="w-full h-12 pl-9 pr-2 rounded-xl border-2 border-transparent focus:border-blue-300 focus:bg-blue-50/50 bg-transparent text-lg text-slate-700 outline-none placeholder:text-slate-400 placeholder:italic transition-all"
+                placeholder={sentence.length === 0 ? "Tap icons or type..." : "Type to add..."}
+                className={`w-full h-12 pl-9 pr-2 rounded-xl border-2 text-lg outline-none transition-all
+                   ${isHighContrast 
+                     ? 'bg-black border-yellow-400 text-yellow-400 placeholder:text-yellow-700 focus:ring-2 focus:ring-yellow-400' 
+                     : 'bg-transparent border-transparent focus:border-blue-300 focus:bg-blue-50/50 text-slate-700 placeholder:text-slate-400 placeholder:italic'}
+                `}
              />
           </div>
         </div>
 
         {/* Suggestions Dropdown */}
         {showSuggestions && inputValue.trim() && (
-          <div className="absolute top-full left-0 right-0 bg-white border border-slate-200 shadow-xl rounded-b-xl z-50 max-h-60 overflow-y-auto">
+          <div className={`absolute top-full left-0 right-0 border shadow-xl rounded-b-xl z-50 max-h-60 overflow-y-auto
+             ${isHighContrast ? 'bg-black border-yellow-400' : 'bg-white border-slate-200'}
+          `}>
             {suggestions.map((tile) => (
               <button
                 key={tile.id}
                 onMouseDown={(e) => { e.preventDefault(); handleSuggestionClick(tile); }} // onMouseDown fires before onBlur
-                className="w-full px-4 py-3 flex items-center gap-3 hover:bg-blue-50 transition-colors text-left border-b border-slate-50 last:border-0"
+                className={`w-full px-4 py-3 flex items-center gap-3 transition-colors text-left border-b last:border-0
+                   ${isHighContrast 
+                     ? 'text-yellow-400 border-yellow-800 hover:bg-yellow-900' 
+                     : 'hover:bg-blue-50 text-slate-700 border-slate-50'}
+                `}
               >
                 <span className="text-2xl">{tile.emoji}</span>
-                <span className="font-bold text-slate-700">{tile.label}</span>
-                <span className="ml-auto text-xs text-slate-400 uppercase">{tile.category}</span>
+                <span className="font-bold">{tile.label}</span>
+                <span className={`ml-auto text-xs uppercase ${isHighContrast ? 'text-yellow-600' : 'text-slate-400'}`}>{tile.category}</span>
               </button>
             ))}
             
             {/* Create Option */}
             <button
                onMouseDown={(e) => { e.preventDefault(); handleAddCustomText(); }}
-               className="w-full px-4 py-3 flex items-center gap-3 hover:bg-indigo-50 transition-colors text-left text-indigo-600 font-bold bg-slate-50"
+               className={`w-full px-4 py-3 flex items-center gap-3 transition-colors text-left font-bold
+                 ${isHighContrast ? 'text-cyan-400 hover:bg-cyan-900 bg-black' : 'hover:bg-indigo-50 text-indigo-600 bg-slate-50'}
+               `}
             >
               <Plus size={20} />
               <span>Add "{inputValue}"</span>
@@ -257,13 +247,20 @@ const SentenceStrip: React.FC<SentenceStripProps> = ({
       </div>
 
       {/* Action Buttons */}
-      <div className={`flex md:flex-col lg:flex-row p-2 gap-2 border-slate-100 bg-slate-50 md:bg-white items-stretch justify-end ${isSidebarRight ? 'border-t md:border-t-0 md:border-l' : 'border-t md:border-t-0 md:border-r'}`}>
+      <div className={`flex md:flex-col lg:flex-row p-2 gap-2 items-stretch justify-end 
+         ${isSidebarRight ? 'border-t md:border-t-0 md:border-l' : 'border-t md:border-t-0 md:border-r'}
+         ${isHighContrast ? 'bg-black border-yellow-400' : 'bg-slate-50 md:bg-white border-slate-100'}
+      `}>
          
          <div className="flex flex-1 gap-2">
             <button 
               onClick={() => { onClear(); setInputValue(''); }}
               disabled={sentence.length === 0 && !inputValue}
-              className="flex-1 md:flex-none flex items-center justify-center gap-2 px-3 lg:px-4 py-2 rounded-lg font-bold text-slate-600 bg-slate-200 hover:bg-slate-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-3 lg:px-4 py-2 rounded-lg font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed
+                ${isHighContrast 
+                  ? 'bg-slate-800 text-white border border-white hover:bg-slate-700' 
+                  : 'bg-slate-200 text-slate-600 hover:bg-slate-300'}
+              `}
               title="Clear All"
             >
               <X size={20} />
@@ -274,18 +271,26 @@ const SentenceStrip: React.FC<SentenceStripProps> = ({
             <button
                onClick={handleSmartFix}
                disabled={(sentence.length === 0 && !inputValue) || isRefining}
-               className="flex-1 md:flex-none flex items-center justify-center gap-2 px-3 lg:px-4 py-2 rounded-lg font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 disabled:opacity-50 transition-colors"
+               className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-3 lg:px-4 py-2 rounded-lg font-bold transition-colors disabled:opacity-50
+                 ${isHighContrast 
+                   ? 'bg-indigo-900 text-cyan-300 border border-cyan-500 hover:bg-indigo-800' 
+                   : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100 border border-indigo-200'}
+               `}
                title="Smart Grammar Fix"
             >
-               {isRefining ? <div className="animate-spin w-5 h-5 border-2 border-indigo-500 border-t-transparent rounded-full" /> : <Wand2 size={20} />}
+               {isRefining ? <div className={`animate-spin w-5 h-5 border-2 border-t-transparent rounded-full ${isHighContrast ? 'border-cyan-300' : 'border-indigo-500'}`} /> : <Wand2 size={20} />}
                <span className="hidden xl:inline">Fix</span>
             </button>
 
              <button 
               onClick={onSave}
               disabled={sentence.length === 0}
-              className="flex-1 md:flex-none flex items-center justify-center gap-2 px-3 lg:px-4 py-2 rounded-lg font-bold text-amber-700 bg-amber-100 hover:bg-amber-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors border border-amber-200"
-              title="Save current phrase to 'Saved' tab"
+              className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-3 lg:px-4 py-2 rounded-lg font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed
+                 ${isHighContrast 
+                   ? 'bg-amber-900 text-amber-300 border border-amber-500 hover:bg-amber-800' 
+                   : 'bg-amber-100 text-amber-700 hover:bg-amber-200 border border-amber-200'}
+              `}
+              title="Save current phrase"
             >
               <Save size={20} />
               <span className="inline">Save</span>
@@ -294,11 +299,12 @@ const SentenceStrip: React.FC<SentenceStripProps> = ({
             <button 
               onClick={handleSpeak}
               disabled={(sentence.length === 0 && !refinedText && !inputValue) || isSpeaking}
-              className={`flex-[2] md:flex-none flex items-center justify-center gap-2 px-6 lg:px-8 py-2 rounded-lg font-bold text-white transition-all shadow-md ${
-                isSpeaking 
-                  ? 'bg-blue-400 cursor-wait' 
-                  : 'bg-blue-600 hover:bg-blue-700 active:translate-y-0.5'
-              } disabled:opacity-50 disabled:shadow-none`}
+              className={`flex-[2] md:flex-none flex items-center justify-center gap-2 px-6 lg:px-8 py-2 rounded-lg font-bold text-white transition-all shadow-md disabled:opacity-50 disabled:shadow-none
+                ${isHighContrast 
+                  ? 'bg-yellow-400 text-black hover:bg-yellow-300 border-2 border-white' 
+                  : 'bg-blue-600 hover:bg-blue-700 active:translate-y-0.5'} 
+                ${isSpeaking ? 'cursor-wait opacity-90' : ''}
+              `}
             >
               <Volume2 size={24} className={isSpeaking ? 'animate-pulse' : ''} />
               <span>{isSpeaking ? 'Speaking...' : 'Speak'}</span>

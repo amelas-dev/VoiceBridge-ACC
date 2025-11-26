@@ -1,8 +1,8 @@
 
 import React, { useState } from 'react';
-import { Palette, Type, Layout, Volume2, Check, Play, Download, WifiOff, Loader2, ArrowLeftRight, MoveHorizontal } from 'lucide-react';
+import { Palette, Type, Layout, Volume2, Check, Play, Download, WifiOff, Loader2, ArrowLeftRight, Eye, MousePointer2, Ear, BellRing, Sun } from 'lucide-react';
 import { UserSettings } from '../types';
-import { VOICE_OPTIONS, VOCABULARY } from '../constants';
+import { VOICE_OPTIONS, VOCABULARY, DEFAULT_SETTINGS } from '../constants';
 import Tile from './Tile';
 import { speakText, preloadAudioAssets } from '../services/gemini';
 
@@ -14,9 +14,23 @@ interface SettingsViewProps {
 const SettingsView: React.FC<SettingsViewProps> = ({ settings, onSettingsChange }) => {
   const [playingVoice, setPlayingVoice] = useState<string | null>(null);
   const [downloadProgress, setDownloadProgress] = useState<{ completed: number, total: number } | null>(null);
+  const [activeTab, setActiveTab] = useState<'general' | 'accessibility'>('general');
 
-  // Default values for reset
-  const defaults: UserSettings = { tileSize: 160, textSize: 20, voiceName: 'Fenrir', sidebarPosition: 'left' };
+  // Initialize accessibility if missing (backward compatibility)
+  const safeSettings = {
+    ...settings,
+    accessibility: settings.accessibility || DEFAULT_SETTINGS.accessibility
+  };
+
+  const updateAccessibility = (key: keyof typeof safeSettings.accessibility, value: any) => {
+    onSettingsChange({
+      ...safeSettings,
+      accessibility: {
+        ...safeSettings.accessibility,
+        [key]: value
+      }
+    });
+  };
 
   const handleVoicePreview = async (voiceName: string) => {
     if (playingVoice) return;
@@ -56,16 +70,31 @@ const SettingsView: React.FC<SettingsViewProps> = ({ settings, onSettingsChange 
         
         {/* Header */}
         <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold text-slate-800">Settings</h2>
+          <div className="flex gap-4">
+             <button 
+               onClick={() => setActiveTab('general')}
+               className={`text-2xl font-bold transition-opacity ${activeTab === 'general' ? 'text-slate-800 opacity-100' : 'text-slate-400 opacity-50 hover:opacity-100'}`}
+             >
+               Settings
+             </button>
+             <button 
+               onClick={() => setActiveTab('accessibility')}
+               className={`text-2xl font-bold transition-opacity flex items-center gap-2 ${activeTab === 'accessibility' ? 'text-blue-600 opacity-100' : 'text-slate-400 opacity-50 hover:opacity-100'}`}
+             >
+               <Eye className="w-8 h-8" />
+               Accessibility
+             </button>
+          </div>
           <button 
-            onClick={() => onSettingsChange(defaults)}
+            onClick={() => onSettingsChange(DEFAULT_SETTINGS)}
             className="text-sm font-semibold text-slate-500 hover:text-red-500 hover:bg-red-50 px-4 py-2 rounded-lg transition-colors"
           >
             Reset Defaults
           </button>
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-6">
+        {activeTab === 'general' ? (
+        <div className="grid lg:grid-cols-2 gap-6 animate-in slide-in-from-left-4 fade-in duration-300">
           
           {/* LEFT COLUMN: Visuals */}
           <div className="space-y-6">
@@ -118,7 +147,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({ settings, onSettingsChange 
               </div>
             </div>
 
-            {/* Accessibility / Layout Card */}
+            {/* Layout Card */}
             <div className="bg-white rounded-xl p-5 shadow-sm border border-slate-200">
               <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
                 <ArrowLeftRight size={20} className="text-purple-500" />
@@ -257,9 +286,150 @@ const SettingsView: React.FC<SettingsViewProps> = ({ settings, onSettingsChange 
                 })}
               </div>
             </div>
-
           </div>
         </div>
+        ) : (
+          // ACCESSIBILITY TAB
+          <div className="grid lg:grid-cols-2 gap-6 animate-in slide-in-from-right-4 fade-in duration-300">
+             
+             {/* Interaction Mode */}
+             <div className="bg-white rounded-xl p-5 shadow-sm border border-slate-200">
+                <h3 className="text-lg font-bold text-slate-800 mb-2 flex items-center gap-2">
+                   <MousePointer2 size={20} className="text-orange-500" />
+                   Input Method
+                </h3>
+                <p className="text-sm text-slate-500 mb-6">
+                   Customize how you interact with the screen. Ideal for paralysis, ALS, or limited motor control.
+                </p>
+
+                <div className="space-y-4">
+                   <div className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${safeSettings.accessibility.mode === 'standard' ? 'border-orange-500 bg-orange-50' : 'border-slate-100 bg-slate-50'}`}
+                        onClick={() => updateAccessibility('mode', 'standard')}
+                   >
+                      <div className="flex justify-between items-center mb-1">
+                         <span className="font-bold text-slate-800">Standard Touch / Click</span>
+                         {safeSettings.accessibility.mode === 'standard' && <Check size={20} className="text-orange-600"/>}
+                      </div>
+                      <p className="text-xs text-slate-500">Default behavior. Tap or click to activate immediately.</p>
+                   </div>
+
+                   <div className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${safeSettings.accessibility.mode === 'dwell' ? 'border-orange-500 bg-orange-50' : 'border-slate-100 bg-slate-50'}`}
+                        onClick={() => updateAccessibility('mode', 'dwell')}
+                   >
+                      <div className="flex justify-between items-center mb-1">
+                         <span className="font-bold text-slate-800">Dwell Click (Head/Eye Tracker)</span>
+                         {safeSettings.accessibility.mode === 'dwell' && <Check size={20} className="text-orange-600"/>}
+                      </div>
+                      <p className="text-xs text-slate-500">Hover over a button to select it automatically. No physical click required.</p>
+                      
+                      {/* Dwell Config */}
+                      {safeSettings.accessibility.mode === 'dwell' && (
+                         <div className="mt-4 pt-4 border-t border-orange-200">
+                            <div className="flex justify-between items-center mb-2">
+                               <span className="text-xs font-bold text-slate-600">Hover Time needed</span>
+                               <span className="text-xs font-bold text-orange-600">{safeSettings.accessibility.dwellTime / 1000}s</span>
+                            </div>
+                            <input 
+                               type="range" min="500" max="3000" step="100"
+                               value={safeSettings.accessibility.dwellTime}
+                               onChange={(e) => updateAccessibility('dwellTime', Number(e.target.value))}
+                               className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-orange-500"
+                            />
+                         </div>
+                      )}
+                   </div>
+                </div>
+             </div>
+
+             {/* Visual Accessibility */}
+             <div className="space-y-6">
+                <div className="bg-white rounded-xl p-5 shadow-sm border border-slate-200">
+                   <h3 className="text-lg font-bold text-slate-800 mb-5 flex items-center gap-2">
+                      <Sun size={20} className="text-yellow-500" />
+                      Visual Aids
+                   </h3>
+
+                   <div className="space-y-6">
+                      <div className="flex items-center justify-between">
+                         <div>
+                            <span className="font-bold text-slate-700 block">High Contrast Mode</span>
+                            <span className="text-xs text-slate-500">Yellow on Black theme for maximum visibility.</span>
+                         </div>
+                         <button 
+                            onClick={() => updateAccessibility('highContrast', !safeSettings.accessibility.highContrast)}
+                            className={`w-14 h-8 rounded-full transition-colors relative ${safeSettings.accessibility.highContrast ? 'bg-yellow-400' : 'bg-slate-200'}`}
+                         >
+                            <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition-transform shadow-sm ${safeSettings.accessibility.highContrast ? 'left-7' : 'left-1'}`} />
+                         </button>
+                      </div>
+
+                      <div>
+                         <div className="flex justify-between items-center mb-2">
+                            <label className="text-sm font-bold text-slate-700">Extra Grid Spacing</label>
+                            <span className="text-xs font-bold text-slate-500">{safeSettings.accessibility.gridGap}px</span>
+                         </div>
+                         <input
+                           type="range"
+                           min="0"
+                           max="40"
+                           step="4"
+                           value={safeSettings.accessibility.gridGap}
+                           onChange={(e) => updateAccessibility('gridGap', Number(e.target.value))}
+                           className="w-full h-2 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-slate-500"
+                         />
+                         <p className="text-xs text-slate-400 mt-1">Add space between buttons to prevent accidental clicks.</p>
+                      </div>
+                   </div>
+                </div>
+
+                {/* Auditory & Tremor */}
+                <div className="bg-white rounded-xl p-5 shadow-sm border border-slate-200">
+                   <h3 className="text-lg font-bold text-slate-800 mb-5 flex items-center gap-2">
+                      <Ear size={20} className="text-purple-500" />
+                      Feedback & Filters
+                   </h3>
+
+                   <div className="space-y-6">
+                      <div className="flex items-center justify-between">
+                         <div>
+                            <span className="font-bold text-slate-700 block">Auditory Hover</span>
+                            <span className="text-xs text-slate-500">Read button labels aloud when you hover over them.</span>
+                         </div>
+                         <button 
+                            onClick={() => updateAccessibility('speakOnHover', !safeSettings.accessibility.speakOnHover)}
+                            className={`w-14 h-8 rounded-full transition-colors relative ${safeSettings.accessibility.speakOnHover ? 'bg-purple-500' : 'bg-slate-200'}`}
+                         >
+                            <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition-transform shadow-sm ${safeSettings.accessibility.speakOnHover ? 'left-7' : 'left-1'}`} />
+                         </button>
+                      </div>
+                      
+                      {safeSettings.accessibility.mode === 'standard' && (
+                         <div className="pt-4 border-t border-slate-100">
+                             <div className="flex justify-between items-center mb-2">
+                                <label className="text-sm font-bold text-slate-700">Touch Filter (Hold Time)</label>
+                                <span className="text-xs font-bold text-slate-500">{safeSettings.accessibility.clickHoldTime}ms</span>
+                             </div>
+                             <input
+                               type="range"
+                               min="0"
+                               max="1000"
+                               step="100"
+                               value={safeSettings.accessibility.clickHoldTime}
+                               onChange={(e) => updateAccessibility('clickHoldTime', Number(e.target.value))}
+                               className="w-full h-2 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-purple-500"
+                             />
+                             <p className="text-xs text-slate-400 mt-1">
+                                {safeSettings.accessibility.clickHoldTime === 0 
+                                  ? "Instant click (Normal)" 
+                                  : "Button must be held down to activate. Helps with tremors."}
+                             </p>
+                         </div>
+                      )}
+                   </div>
+                </div>
+             </div>
+          </div>
+        )}
       </div>
     </div>
   );

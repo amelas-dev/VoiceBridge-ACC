@@ -1,5 +1,5 @@
 
-import { Vocabulary, TileData } from './types';
+import { Vocabulary, TileData, UserSettings } from './types';
 
 export const CATEGORIES = ['General', 'Needs', 'Feelings', 'People', 'Actions', 'Keyboard', 'Saved'] as const;
 export const STORAGE_KEY = 'voicebridge_saved_phrases';
@@ -12,6 +12,21 @@ export const VOICE_OPTIONS = [
   { id: 'Fenrir', label: 'Fenrir', description: 'Energetic & Strong' },
   { id: 'Zephyr', label: 'Zephyr', description: 'Calm & Balanced' },
 ] as const;
+
+export const DEFAULT_SETTINGS: UserSettings = {
+  tileSize: 160,
+  textSize: 20,
+  voiceName: 'Fenrir',
+  sidebarPosition: 'left',
+  accessibility: {
+    mode: 'standard',
+    dwellTime: 1000,
+    highContrast: false,
+    speakOnHover: false,
+    gridGap: 0,
+    clickHoldTime: 0
+  }
+};
 
 const baseTiles: TileData[] = [
   // --- General Category (Folders Only) ---
